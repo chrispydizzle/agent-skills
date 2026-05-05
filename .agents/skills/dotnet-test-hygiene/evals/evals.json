@@ -1,0 +1,17 @@
+{
+  "skill_name": "dotnet-test-hygiene",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm validating a .NET solution with project references and want to run dotnet test with an isolated output directory. Tell me how to avoid leaving untracked artifacts under referenced projects.",
+      "expected_output": "The response should warn that relative OutDir can be interpreted per project, recommend an ignored repo-level or external output directory, and include a cleanup/status checklist.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "After dotnet test --property:OutDir=artifacts I see artifacts folders under several class library projects. What should I do before handing off?",
+      "expected_output": "The response should treat the folders as generated validation output, advise careful cleanup of only generated directories, rerun status checks, and report the validation command and cleanup.",
+      "files": []
+    }
+  ]
+}

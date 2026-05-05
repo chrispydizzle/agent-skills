@@ -1,0 +1,23 @@
+{
+  "skill_name": "autonomous-research-loop",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Operate autonomously to research whether the current repo has prior notes about flaky integration tests. Track what you learn, compare against any existing findings, and leave a handoff for the next loop.",
+      "expected_output": "The agent should read prior state before investigating, choose a bounded loop objective, record evidence with file paths, update or propose a knowledge-base entry, and provide an Autonomous Research Handoff.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I'm putting you on autopilot for a security research spike. Review the existing findings first, avoid dead ends we've already tried, and keep notes as you go.",
+      "expected_output": "The agent should restate scope and safety boundaries, inventory existing findings/dead ends, pick a concrete objective, avoid risky unauthorized action, and preserve new evidence plus next steps.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Pick up where we left off from the progress log and keep going until you have a useful next recommendation.",
+      "expected_output": "The agent should locate and read the progress log, extract current goal/open questions, run a bounded investigation loop, and end with updated conclusions and a specific next loop recommendation.",
+      "files": []
+    }
+  ]
+}

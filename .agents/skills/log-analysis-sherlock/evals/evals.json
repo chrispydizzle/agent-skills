@@ -1,0 +1,117 @@
+{
+  "skill_name": "log-analysis-sherlock",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I pulled a SELinux denial log from a Samsung SM-T377A. Please analyze it like a security researcher, not just a sysadmin. Tell me which blocked actions are hard dead ends, which ones still reveal reachable attack surface, and whether any line suggests a privilege-boundary oracle or exploitable system behavior. I care about what is actually promising versus what only looks spicy. Use a confidence-rated report.",
+      "expected_output": "A structured report that separates observation from inference, identifies the shell SELinux domain and denied capabilities, highlights reachable surfaces revealed by AVCs, and distinguishes blocked paths from real exploitability leads or dead ends.",
+      "files": [
+        "..\\findings\\sysdump_output\\avc_msg.log"
+      ],
+      "expectations": [
+        "The output identifies the caller as the shell SELinux domain (`u:r:shell:s0`) or clearly equivalent shell context.",
+        "The output distinguishes at least one hard dead end from at least one reachable-but-blocked surface revealed by the AVCs.",
+        "The output cites both a denied property operation and a denied socket or file operation as evidence.",
+        "The output accurately attributes the blocking to SELinux or property-service policy rather than claiming successful privileged side effects from the denied operations.",
+        "The output gives a confidence-rated exploitability judgment instead of treating every denial as exploitable."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I have a Samsung vendor debug log and a dumpstate capture from the same tablet. I want you to find the log lines that would matter most to an attacker or exploit developer. Focus on copied diagnostics, sensitive boot or kernel details, OEM trust or integrity signals, and anything that weakens Android's normal log-access assumptions. Do not just summarize the files; tell me what actually changes exploitability or information-disclosure risk.",
+      "expected_output": "A high-signal analysis that calls out vendor logging behavior, information leaks such as boot or kernel details, integrity and TrustZone clues, and whether the logs appear to expose privileged diagnostics through weaker channels.",
+      "files": [
+        "..\\findings\\sysdump_output\\sec_log.log",
+        "..\\findings\\sysdump_output\\dumpState_T377AUCU2AQGF_202603061424.log"
+      ],
+      "expectations": [
+        "The output states that the vendor log behaves like a copied or weaker diagnostic channel, not merely a normal application log.",
+        "The output cites sensitive system detail from dumpstate such as the build fingerprint, kernel version, boot arguments, or sec_debug/TIMA-related settings.",
+        "The output highlights at least one TrustZone, TIMA, or Knox integrity clue from `sec_log.log`.",
+        "The output treats TIMA, Knox, or trust-state lines as integrity or oracle disclosure evidence rather than proof that the device is already compromised.",
+        "The output explains why the exposed details matter for information disclosure risk or exploit acceleration."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "These Android trace artifacts are noisy. Figure out whether they point to a binder stall, memory pressure problem, GC noise, or something else. I want the real first-order explanation, not the loudest symptom. If there is any security angle, such as a low-privilege caller being able to starve a privileged component or force a useful oracle, say so explicitly; otherwise tell me why it is probably non-security.",
+      "expected_output": "A timeline-first explanation of the traces that distinguishes binder wait states from GC or heap symptoms, explains what is proven versus speculative, and clearly labels any security-relevant angle or reasons to downgrade it.",
+      "files": [
+        "..\\findings\\sysdump_output\\traces_bugreport.txt",
+        "..\\findings\\sysdump_output\\traces.txt"
+      ],
+      "expectations": [
+        "The output gives an explicit verdict on whether binder stall is the root cause, and supports that verdict with at least one cited clue from the traces.",
+        "The output identifies a broadcast-related or main-thread startup/provider-initialization ANR as the first-order explanation, rather than leaving the root cause at the level of generic binder or GC discussion.",
+        "The output explicitly downgrades GC or heap noise if it is not the first-order cause.",
+        "The output separates proven findings from speculation or uncertainty.",
+        "The output gives a clear security assessment instead of implying the traces are exploitable by default."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "I captured this Bluetooth-oriented Android log while investigating old BlueBorne-style ideas. Tell me whether the evidence points to a kernel-reachable bug, a userspace-only path, or just noisy Bluetooth startup behavior. I specifically want you to separate superficial scary lines from the few lines that truly matter for exploitability triage.",
+      "expected_output": "An Android-specific exploitability assessment that filters noise, identifies the decisive Bluetooth and stack-layer clues, and states whether the evidence supports a kernel path, a userspace path, or a dead end.",
+      "files": [
+        "..\\device-data\\extracted\\bluborne_crash_logcat.txt"
+      ],
+      "expectations": [
+        "The output explicitly decides between a kernel-reachable path, a userspace-only path, or a dead end.",
+        "The output identifies specific protocol-layer evidence such as L2CAP rejection, CID handling, Bluedroid behavior, or explicit absence of kernel crash markers as the decisive triage evidence.",
+        "The output ties the decisive rejection to a concrete userspace Bluetooth handler, process, or log component such as `bt_l2cap`, Bluedroid, or `com.android.bluetooth`, rather than only saying the bug is 'not kernel'.",
+        "The output distinguishes the decisive L2CAP rejection path from lower-signal startup or firmware chatter by naming at least one scary-looking line family that should be downgraded as noise.",
+        "The output does not claim kernel exploitability without concrete kernel-side evidence."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Please analyze this radio log as if I am trying to decide whether it contains a security lead or just telephony churn. I care about subtle clues like inconsistent identity, dummy subscription state, retry or oracle behavior, and whether any modem-facing detail would be useful for an attacker. Keep the conclusion disciplined and confidence-rated.",
+      "expected_output": "A restrained assessment that distinguishes normal telephony or SIM-absent behavior from any actual privilege oracle, state-leak, or attacker-useful modem detail, with explicit confidence levels.",
+      "files": [
+        "..\\device-data\\extracted\\sysdump_extract\\radio.log"
+      ],
+      "expectations": [
+        "The output identifies dummy subscription state, SIM-absent behavior, or equivalent telephony context as part of the explanation.",
+        "The output does not treat noisy `RILD` lines alone as proof of exploitability.",
+        "The output distinguishes attacker-useful protocol or state leakage from ordinary telephony churn.",
+        "The output ends with a disciplined, confidence-rated security judgment."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "I want a cross-source incident reconstruction using these Android artifacts. Rebuild the most defensible sequence of events, tell me which sources are trustworthy versus noisy, and identify the top 3 security-relevant clues. I especially want you to notice copied diagnostics, negative-space clues, and contradictions between subsystems that a good engineer might miss on a first pass.",
+      "expected_output": "A synthesized report that inventories sources, aligns timestamps or causal order, highlights contradictions and omissions, and surfaces the most security-relevant clues rather than just summarizing each file independently.",
+      "files": [
+        "..\\findings\\sysdump_output\\avc_msg.log",
+        "..\\findings\\sysdump_output\\sec_log.log",
+        "..\\findings\\sysdump_output\\dumpState_T377AUCU2AQGF_202603061424.log",
+        "..\\findings\\sysdump_output\\traces_bugreport.txt"
+      ],
+      "expectations": [
+        "The output builds a cross-source narrative instead of summarizing each file independently.",
+        "The output comments on source trustworthiness, noise level, or relative evidentiary value across the provided artifacts.",
+        "The output identifies at least one contradiction, omission, or negative-space clue.",
+        "The output presents copied or weakened diagnostics as a named security finding or as one of the explicit top-priority clues, not merely as an evidentiary caveat.",
+        "The output presents a top-3-style prioritization of the security-relevant clues."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Use these files to answer a very specific question: do the logs suggest a late guardrail, where the system does meaningful work and only then denies or fails, or do they show clean early blocking? I care because late guardrails are often where exploitability hides. Explain your reasoning carefully and tell me what evidence would confirm or kill the theory.",
+      "expected_output": "An analysis that explicitly reasons about early versus late enforcement, cites the log evidence for any partial-side-effect behavior, and clearly states what additional evidence would confirm or refute the hypothesis.",
+      "files": [
+        "..\\findings\\sysdump_output\\avc_msg.log",
+        "..\\findings\\sysdump_output\\sec_log.log",
+        "..\\device-data\\extracted\\bluborne_crash_logcat.txt"
+      ],
+      "expectations": [
+        "The output explicitly answers whether the evidence suggests a late guardrail or clean early blocking.",
+        "The output cites concrete evidence from the files rather than answering only at a conceptual level.",
+        "The output explicitly classifies the Bluetooth sequence itself as early blocking, late guardrail, or inconclusive, not merely the corpus as a whole.",
+        "The output distinguishes ordinary protocol work or graceful connection handling from a true late-guardrail side effect, and does not treat ACL setup or feature parsing alone as sufficient proof that exploitability-relevant work happened before rejection.",
+        "The output states what additional evidence would confirm or kill the late-guardrail theory.",
+        "The output gives a confidence-rated conclusion rather than an unqualified maybe."
+      ]
+    }
+  ]
+}

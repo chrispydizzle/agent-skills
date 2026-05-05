@@ -1,0 +1,117 @@
+{
+  "skill_name": "android-privesc-sherlock",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I pulled `all_props.txt` from a Samsung SM-T377A and I want a privesc-focused device-reality read, not a generic Android summary. Tell me what this build state proves about the starting foothold, boot and integrity posture, and which common escalation ideas should be downgraded immediately. Be careful with Samsung-specific signals like Knox, warranty bits, and OEM unlock properties. Use a confidence-rated report that separates evidence from inference.",
+      "expected_output": "A device-profile-driven triage that correctly reads the build as a production Samsung user build, identifies the relevant boot and integrity signals, and avoids overclaiming unlocked or debug state from ambiguous properties.",
+      "files": [
+        "..\\work\\recon\\all_props.txt"
+      ],
+      "expectations": [
+        "The output identifies the device as a `user` build and cites `ro.debuggable=0` and/or `ro.secure=1` as evidence that this is not a debug-friendly starting position.",
+        "The output cites Samsung-specific integrity context such as `ro.config.knox=v30`, `ro.boot.warranty_bit=0`, or the bootloader value `T377AUCU2AQGF`.",
+        "The output mentions the `release-keys` build fingerprint or otherwise correctly treats the runtime build as production-signed context.",
+        "The output does not misread `sys.oem_unlock_allowed=1` as proof that the bootloader is actually unlocked or trivially unlockable.",
+        "The output distinguishes confirmed facts from what would require additional evidence, instead of claiming root, custom images, or active management state from properties alone."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I have a Samsung service inventory plus package dump from the same tablet. Rank the three most interesting local privesc leads from an adb shell or ordinary app foothold. I specifically care about cheaper OEM or privileged-app paths before kernel exploitation, and I want you to separate 'permission-gated but high-value' from 'actually promising right now.'",
+      "expected_output": "A ranked Samsung-specific lead list that focuses on OEM services and privileged components, highlights likely intermediaries such as parser or management surfaces, and does not jump straight to kernel folklore.",
+      "files": [
+        "..\\work\\recon\\service_list_full.txt",
+        "..\\work\\recon\\full_package_dump.txt"
+      ],
+      "expectations": [
+        "The output cites at least two named Samsung-facing services from the inventory such as `execute`, `ABTPersistenceService`, `EngineeringModeService`, `DeviceRootKeyService`, or `dlp`.",
+        "The output identifies `com.sec.android.app.parser/.SecretCodeIME` or the parser package as a concrete privileged-app lead and notes that its `SecretCodeIME` permission is unusually weak compared with the parser's signature-gated service permission.",
+        "The output prefers OEM service or privileged-app paths ahead of speculative kernel exploitation when ranking next steps.",
+        "The output explicitly distinguishes permission-gated surfaces from confirmed compromise paths, rather than claiming a named service directly yields root.",
+        "The output gives a cheapest-next-step style recommendation tied to the named artifacts instead of a generic 'analyze more' conclusion."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Look at this package dump and property set only through the management-plane lens. I want to know whether Device Owner, managed provisioning, Knox MDM, or certificate-related surfaces deserve top-tier attention on this tablet. Do not confuse 'the management stack exists' with 'the device is already compromised or actively managed.' Tell me what is proven, what is merely present, and what evidence I should collect next.",
+      "expected_output": "A disciplined management-plane assessment that recognizes managed provisioning and Samsung MDM surface area, explains why that matters, and avoids falsely asserting that a Device Owner is already active.",
+      "files": [
+        "..\\work\\recon\\full_package_dump.txt",
+        "..\\work\\recon\\all_props.txt"
+      ],
+      "expectations": [
+        "The output cites at least one managed provisioning artifact such as `DeviceOwnerPreProvisioningActivity`, `ACTION_PROVISION_MANAGED_DEVICE`, or `ProfileOwnerPreProvisioningActivity`.",
+        "The output cites at least one Samsung or Knox management clue such as `com.samsung.klmsagent/.listner.MDMReceiver`, Knox-specific MDM permissions, or managed-user support.",
+        "The output says the artifacts show the management or enrollment surface exists, but do not by themselves prove an active Device Owner or current enterprise takeover.",
+        "The output recommends a next evidence source such as `dumpsys device_policy`, owner-state inspection, or certificate and policy-state collection.",
+        "The output explicitly explains that, if active, management-plane abuse could outrank a kernel path."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Analyze this SELinux denial corpus like an Android privesc investigator. I care about which denials are hard dead ends, which ones still reveal reachable-but-gated surfaces, and whether any line gives me a useful privilege-boundary oracle. Treat the log as evidence, not as automatic exploitability. Use a confidence-rated report.",
+      "expected_output": "A shell-domain SELinux analysis that separates hard blocks from interesting gates, cites property and socket or filesystem denials, and stays disciplined about what the AVCs do and do not prove.",
+      "files": [
+        "..\\findings\\sysdump_output\\avc_msg.log"
+      ],
+      "expectations": [
+        "The output identifies the caller as the shell domain (`u:r:shell:s0`) or clearly equivalent shell context.",
+        "The output cites denied property-setting attempts such as `persist.sys.test.privesc`, `persist.test.privesc`, `sys.test.privesc`, or `ctl.bootanim` as blocked control paths rather than successful privileged side effects.",
+        "The output cites at least one denied socket or filesystem action such as the socket-creation denials from `phonet_pnpipe_exploit` or the denied symlink creation into `dumplog_data_file`.",
+        "The output distinguishes hard dead ends from reachable-but-gated surfaces, instead of treating every AVC as equally promising.",
+        "The output does not infer a permissive domain or easy SELinux domain hop from this corpus alone."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "I want a Sherlock-level reading of these Samsung diagnostic artifacts from a privilege-escalation perspective. Find the lines that most change exploit cost, especially copied diagnostics, privileged log-processing, TrustZone or TIMA behavior, boot arguments, and anything that leaks enforcement or integrity state. Explain what is a real enabler, what is an integrity guardrail, and what would reshape path ranking.",
+      "expected_output": "A privesc-oriented analysis that names Samsung diagnostic enablers, identifies integrity-monitor behavior, and explains how logging and dump artifacts change both exploit cost and persistence difficulty.",
+      "files": [
+        "..\\findings\\sysdump_output\\sec_log.log",
+        "..\\findings\\sysdump_output\\dumpState_T377AUCU2AQGF_202603061424.log"
+      ],
+      "expectations": [
+        "The output cites the dumpstate command line or equivalent boot-argument line exposing bootloader, serial, `sec_debug`, or Samsung `sec_*` log-buffer details.",
+        "The output identifies `SecurityLogAgent` as a privileged Samsung logging path and cites its handling of `samsung.intent.action.knox.DENIAL_NOTIFICATION` and/or `/data/misc/audit/audit.old`.",
+        "The output cites TIMA or MobiCore trustlet lines from `sec_log.log`, such as `warranty okay`, `Kernel verification success`, or the leaked SELinux physical addresses.",
+        "The output treats TIMA, Knox, or TrustZone lines as integrity-monitor or oracle evidence rather than proof that the device is already compromised.",
+        "The output explicitly explains how copied diagnostics or leaked enforcement state lower exploit cost or change path ranking."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Please triage this Bluetooth-oriented Android log specifically for old BlueBorne-style local or nearby privesc ideas. I do not want a Bluetooth startup summary. I want to know whether the evidence points toward a kernel-reachable path, a userspace-only path, or just noisy initialization, and which few lines actually matter for that call.",
+      "expected_output": "A disciplined Bluetooth exploitability assessment that filters startup chatter, identifies the decisive userspace Bluetooth clues, and avoids claiming a kernel path without concrete evidence.",
+      "files": [
+        "..\\device-data\\extracted\\bluborne_crash_logcat.txt"
+      ],
+      "expectations": [
+        "The output explicitly decides between a kernel-reachable path, a userspace-only path, or an inconclusive or dead-end result.",
+        "The output cites concrete Bluetooth stack clues such as `bt_l2cap`, `TRC_L2CAP`, or `com.android.bluetooth` rather than relying on generic Bluetooth language.",
+        "The output downgrades noisy lines such as PackageManager unknown-permission spam or broad profile-startup chatter instead of treating them as exploit evidence.",
+        "The output does not claim kernel exploitability without concrete kernel-side crash or reachability evidence.",
+        "The output stays focused on exploitability triage rather than drifting into generic Bluetooth debugging."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Use these cross-source Android artifacts to answer the question I actually care about: what is the cheapest credible privilege-escalation path family to validate next on this SM-T377A-like device, and which attractive ideas are already weakened or closed by the evidence? Build me a ranked short list with rationale, not a generic summary.",
+      "expected_output": "A cross-source ranked recommendation that combines build state, Samsung services, SELinux boundaries, and diagnostic enablers to nominate the cheapest next path family while explicitly closing weaker theories.",
+      "files": [
+        "..\\work\\recon\\all_props.txt",
+        "..\\work\\recon\\service_list_full.txt",
+        "..\\work\\recon\\full_package_dump.txt",
+        "..\\findings\\sysdump_output\\avc_msg.log",
+        "..\\findings\\sysdump_output\\sec_log.log"
+      ],
+      "expectations": [
+        "The output ranks at least one non-kernel path family ahead of generic kernel exploitation, using named evidence from the supplied artifacts.",
+        "The output uses Samsung-specific artifacts such as parser `SecretCodeIME`, named OEM services, Knox or TIMA context, or logging behavior to justify the ranking.",
+        "The output treats logs and copied diagnostics as chain enablers or exploit-cost reducers rather than mere debugging noise.",
+        "The output explicitly closes or downgrades at least one appealing theory using evidence from the artifact set instead of leaving every idea open-ended.",
+        "The output ends with a concrete next validation step tied to the ranked path family."
+      ]
+    }
+  ]
+}
