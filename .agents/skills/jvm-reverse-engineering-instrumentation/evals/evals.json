@@ -1,0 +1,23 @@
+{
+  "skill_name": "jvm-reverse-engineering-instrumentation",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm instrumenting a Java service with Byte Buddy. My AgentBuilder listener says it transformed com.example.AuthService, but my @Advice.OnMethodEnter logs never print. The advice calls AgentLog.debug from a nested helper class in the agent jar. How should I debug this without guessing?",
+      "expected_output": "Should separate transform success from advice execution, recommend a JDK-only first-pass advice body, identify helper class-loader visibility as a likely cause, and propose explicit next checks before richer logging.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "On Java 25 my Java agent is throwing Byte Buddy class-file version warnings, and constructor advice with onThrowable fails during transform. I still need a safe observer to understand object construction flow in an authorized lab app. What should I do first?",
+      "expected_output": "Should mention Byte Buddy/Java version compatibility, the possible need for documented experimental flags or upgrading Byte Buddy, constructor advice constraints, avoiding constructor onThrowable initially, and proving a normal method or entry-only observer first.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "We have authorization to reverse engineer a plugin-heavy JVM application. There are custom child-first class loaders, and I want to add method-entry tracing without destabilizing the app or leaking private data. Give me a disciplined plan.",
+      "expected_output": "Should state the authorization/safety boundary, keep observation minimal, map class loaders, use helper-free JDK-only logging first, define helper injection strategy only after execution is proven, and produce a report structure with transform and advice evidence separated.",
+      "files": []
+    }
+  ]
+}
